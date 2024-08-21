@@ -7,8 +7,8 @@ from threading import Thread
 def worker(job_number, from_thread=True):
     new_plaintext_append_number = re.sub(r"FUZZ", str(job_number), new_plaintext_append)
     new_ciphertext = os.popen(f'./rustpad web --oracle "{url}" -D "0000000000000000" -E "{new_plaintext_append_number}" -B 8 --no-iv -t 15').read().strip()
-    if re.match(r"[0-9a-f]{32}0{16}", new_ciphertext) is None:
-        raise Exception("Invalid ciphertext")
+    if re.search(r"[0-9a-f]{32}0{16}", new_ciphertext, re.MULTILINE) is None:
+        raise Exception(f"Invalid ciphertext {new_ciphertext}")
     start = len(new_ciphertext) - 48
     new_ciphertext = new_ciphertext[start:len(new_ciphertext)]
     ciphertext = ciphertext_base + new_ciphertext
