@@ -12,7 +12,7 @@ def hello():
     d = request.args.get('d')
     m = request.args.get('m')
     n = request.args.get('n')
-    n = request.args.get('v')
+    v = request.args.get('v')
     if None in [s,b,d,m,n,v]:
         return f'Missing parameters {[s,b,d,m,n,v]}'
     new_ciphertext = f"&v={v}&b={b}&d={d}&m={m}&n={n}&s={s}"
