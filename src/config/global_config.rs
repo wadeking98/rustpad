@@ -2,6 +2,7 @@ use anyhow::Result;
 use getset::Getters;
 use log::LevelFilter;
 use std::path::PathBuf;
+use regex::Regex;
 
 use crate::{
     block::block_size::BlockSize, cli::GlobalOptions, cypher_text::CypherText,
@@ -52,7 +53,20 @@ impl TryFrom<&GlobalOptions> for GlobalConfig {
             plain_text: options
                 .plain_text()
                 .as_ref()
-                .map(|plain_text| PlainText::new(plain_text, options.block_size())),
+                .map(|plain_text|{
+                    let mut new_plain_text = plain_text.clone();
+                    let re = Regex::new(r"\\x([0-9a-fA-F]{2})").unwrap();
+                    let hex_matches = re.captures_iter(&plain_text);
+                    for hex_match in hex_matches {
+                        let hex = &hex_match[0];
+                        let hex_str = &hex[2..];
+                        let hex_num = u8::from_str_radix(hex_str, 16).unwrap();
+                        let hex_char = hex_num as char;
+                        let hex_char_str = hex_char.to_string();
+                        new_plain_text = new_plain_text.replace(hex, &hex_char_str);
+                    }
+                    PlainText::new(&new_plain_text, options.block_size())
+                }),
             block_size: *options.block_size(),
             log_level,
             thread_count: options.thread_count().clone(),

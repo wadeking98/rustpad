@@ -4,9 +4,9 @@ import os
 import sys
 from threading import Thread
 
-def worker(job_number, from_thread=True):
+def worker(job_number, from_thread=True, iv="0000000000000000"):
     new_plaintext_append_number = re.sub(r"FUZZ", str(job_number), new_plaintext_append)
-    new_ciphertext = os.popen(f'./rustpad web --oracle "{url}" -D "0000000000000000" -E "{new_plaintext_append_number}" -B 8 --no-iv -t 15').read().strip()
+    new_ciphertext = os.popen(f'./rustpad web --oracle "{url}" -D "{iv}" -E "{new_plaintext_append_number}" -B 8 --no-iv -t 15').read().strip()
     if re.search(r"[0-9a-f]{32}0{16}", new_ciphertext, re.MULTILINE) is None:
         raise Exception(f"Invalid ciphertext {new_ciphertext}")
     start = len(new_ciphertext) - 48
@@ -23,15 +23,20 @@ def worker(job_number, from_thread=True):
 
 def workerWrapper(job_number):
     retVal = None
+    encountered_error = False
     for i in range(0, 3):
-        encountered_error = False
         try:
-            retVal = worker(job_number)
+            retVal = worker(job_number, iv=str(i).zfill(16))
+            encountered_error = False
             break
         except:
             encountered_error = True
         if encountered_error:
             print(f"Retrying job {job_number} ({i+1}/3)")
+    if encountered_error:
+        print(f"Failed job {job_number}")
+        with open("failed_jobs.txt", "a+") as f:
+            f.write(f"{job_number}\n")
     return retVal
 
 if __name__ == "__main__":
@@ -53,7 +58,7 @@ if __name__ == "__main__":
         sanity_check_id = sys.argv[7]
 
     if sanity_check_id is not None:
-        res = worker(sanity_check_id, False)
+        res = worker(sanity_check_id, from_thread=False)
         if res:
             print("Sanity check passed")
         else:
